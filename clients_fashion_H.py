@@ -19,7 +19,7 @@ import fl_proto_pb2_grpc as fl_pb2_grpc
 # -----------------------------
 # Global Configurations
 # -----------------------------
-local_lr = 0.02
+local_lr = 0.01
 lr_decay = 0.995 
 local_epochs = 5
 target_accuracy = 90.0
