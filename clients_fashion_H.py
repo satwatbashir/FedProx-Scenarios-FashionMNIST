@@ -38,7 +38,7 @@ class FashionMNISTCNN(torch.nn.Module):
         self.conv1 = torch.nn.Conv2d(1, 32, 3, 1)
         self.conv2 = torch.nn.Conv2d(32, 64, 3, 1)
         self.dropout = torch.nn.Dropout(0.25)
-        self.fc1 = torch.nn.Linear(9216, 128)
+        self.fc1 = torch.nn.Linear(1600, 128)
         self.fc2 = torch.nn.Linear(128, 10)
 
     def forward(self, x):
