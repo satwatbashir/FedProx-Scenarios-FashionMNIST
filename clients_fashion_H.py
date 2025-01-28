@@ -272,7 +272,7 @@ def main():
     args = parser.parse_args()
 
     # Scenario-based my valaues
-    mu_values = {'LOW': 0.5, 'MEDIUM': 1.0, 'HIGH': 1.5}  # <--- HERE
+    mu_values = {'LOW': 0.5, 'MEDIUM': 1.0, 'HIGH': 1.5}  
     global mu  # Reference the global μ variable
     mu = mu_values[args.scenario] 
 
