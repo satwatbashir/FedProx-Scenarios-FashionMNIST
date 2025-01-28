@@ -271,6 +271,11 @@ def main():
     parser.add_argument("--order_id", type=int, required=True)
     args = parser.parse_args()
 
+    # Scenario-based my valaues
+    mu_values = {'LOW': 0.5, 'MEDIUM': 1.0, 'HIGH': 1.5}  # <--- HERE
+    global mu  # Reference the global μ variable
+    mu = mu_values[args.scenario] 
+
     set_random_seeds()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\n=== Client {args.client_id} starting on {device} ===")
