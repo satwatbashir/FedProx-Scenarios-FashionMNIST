@@ -19,13 +19,13 @@ import fl_proto_pb2_grpc as fl_pb2_grpc
 from fmnist_model import FashionMNISTCNN 
 
 # Hyperparameters
-local_lr = 0.01
-lr_decay = 0.995
-local_epochs = 1
+local_lr = 0.02
+lr_decay = 0.998
+local_epochs = 5
 target_accuracy = 90.0
 momentum = 0.5
-number_of_rounds = 50
-mu = 1
+number_of_rounds = 500
+mu = 0.5
 base_data_source = 'FASHION-MNIST'
 session_id = str(uuid.uuid4())
 
@@ -73,7 +73,7 @@ def dirichlet_distribution(num_clients, num_classes, alpha):
     return np.random.dirichlet([alpha] * num_classes, num_clients)
 
 # Create Label Skew Indices
-def create_label_skew_indices(client_id, total_samples=60000, alpha_label=0.5, alpha_quantity=0.5, seed=42):
+def create_label_skew_indices(client_id, total_samples=60000, alpha_label=0.7, alpha_quantity=0.5, seed=42):
     client_num = int(client_id.split("client")[-1])  
     np.random.seed(seed + client_num)
     random.seed(seed + client_num)
@@ -123,9 +123,9 @@ class ClientDataset(torch.utils.data.Dataset):
 def build_hybrid_loader(client_id, scenario):
     scenario = scenario.upper()
     config = {
-        'LOW': {'alpha_label': 0.8, 'alpha_quantity': 1, 'transform': fs_low()},
-        'MEDIUM': {'alpha_label': 0.5, 'alpha_quantity': 0.7, 'transform': fs_medium()},
-        'HIGH': {'alpha_label': 0.3, 'alpha_quantity': 0.5, 'transform': fs_high()}
+        'LOW': {'alpha_label': 1, 'alpha_quantity': 1, 'transform': fs_low()},
+        'MEDIUM': {'alpha_label': 0.7, 'alpha_quantity': 0.7, 'transform': fs_medium()},
+        'HIGH': {'alpha_label': 0.5, 'alpha_quantity': 0.5, 'transform': fs_high()}
     }[scenario]
 
     indices = create_label_skew_indices(
@@ -214,7 +214,7 @@ def send_model_parameters(stub, model, accuracy, avg_loss, client_id, scenario, 
         total_parameters=sum(p.numel() for p in model.parameters()),
         timestamp=datetime.datetime.now().isoformat(),
         model_performance={"accuracy": float(accuracy), "average_loss": float(avg_loss)},
-        model_structure="ResNetCIFAR10",
+        model_structure="FashionMNISTCNN",
         **simulate_network_parameters(),
         current_round=round_num 
     )
@@ -250,7 +250,7 @@ def simulate_network_parameters():
 
 
 def save_training_metrics(client_id, scenario, order_id, round_num, accuracy, avg_loss):
-    filename = f"training_metrics_cifar10_hybrid_{scenario.lower()}_{client_id}_order_{order_id}.csv"
+    filename = f"training_metrics_fmnist_hybrid_{scenario.lower()}_{client_id}_order_{order_id}.csv"
     file_exists = os.path.exists(filename)
     
     with open(filename, 'a', newline='') as f:
@@ -286,7 +286,10 @@ def main():
     channel = grpc.insecure_channel('localhost:50051', options=[
         ('grpc.max_send_message_length', 256*1024*1024),
         ('grpc.max_receive_message_length', 256*1024*1024),
-        ('grpc.http2.max_pings_without_data', 0)
+        ('grpc.http2.max_pings_without_data', 0),
+        ('grpc.keepalive_time_ms', 10000),  
+        ('grpc.keepalive_timeout_ms', 10000),  
+        ('grpc.keepalive_permit_without_calls', True)
     ])
     stub = fl_pb2_grpc.FederatedLearningServiceStub(channel)
     
@@ -341,7 +344,7 @@ def main():
         # Load global model
         if response.model_data:
             try:
-                global_state = torch.load(io.BytesIO(response.model_data), map_location=device)
+                global_state = torch.load(io.BytesIO(response.model_data), map_location=device, weights_only= True)
                 model.load_state_dict(global_state)
             except Exception as e:
                 print(f"Error loading global model: {str(e)}")

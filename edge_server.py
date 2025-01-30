@@ -5,7 +5,7 @@ import fl_proto_pb2 as fl_pb2
 import fl_proto_pb2_grpc as fl_pb2_grpc
 import logging
 import io
-from fashion_mnist_client_H import FashionMNISTCNN
+from fmnist_model import FashionMNISTCNN
 
 class FederatedProxService(fl_pb2_grpc.FederatedLearningServiceServicer):
     def __init__(self, num_clients=5):
@@ -125,7 +125,12 @@ def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10), options=[
         ('grpc.max_send_message_length', 256 * 1024 * 1024),
         ('grpc.max_receive_message_length', 256 * 1024 * 1024),
+    	('grpc.keepalive_time_ms', 10000),  
+    	('grpc.keepalive_timeout_ms', 5000), 
+    	('grpc.http2.max_pings_without_data', 0), 
+    	('grpc.keepalive_permit_without_calls', True)  
     ])
+
     fl_pb2_grpc.add_FederatedLearningServiceServicer_to_server(
         FederatedProxService(), server
     )
